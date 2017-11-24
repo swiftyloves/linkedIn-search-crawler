@@ -38,6 +38,7 @@ To run crawler
 
     $ python linkedin.py crawl me@email.com list_of_names.csv dump_profiles_here.csv --browser=firefox
 
+
 Environment 2017
 ---
 Download geckodriver and chromedriver (if you're using Chrome, otherwise, firefoxdriver)
