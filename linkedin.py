@@ -69,7 +69,7 @@ class WebBus:
         if _type is UnknownBrowserException:
             click.echo("Please use either Firefox, PhantomJS or Chrome")
             return False
-
+        print('__exit__, dirver close')
         self.driver.close()
 
 
@@ -153,7 +153,7 @@ def crawl(browser, username, infile, outfile):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
-    link_title = './/a[@class="title main-headline"]'
+    link_title = './/a[@class="search-result__result-link"]'
 
     # now open the browser
     with WebBus(browser) as bus:
@@ -163,6 +163,7 @@ def crawl(browser, username, infile, outfile):
 
         for name in all_names:
             click.echo("Getting ...")
+            print(name)
             try:
                 search_input = bus.driver.find_element_by_css_selector('.ember-view input')
             except NoSuchElementException:
@@ -176,89 +177,17 @@ def crawl(browser, username, infile, outfile):
             except NoSuchElementException:
                 print('click search button failes')
 
-            # profiles = []
+            profiles = []
 
             # collect all the profile links
             results = None
             try:
                 results = WebDriverWait(bus.driver, 10).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, ".search-results__cluster-title"))
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".search-results__primary-cluster"))
                 )
             finally:
-                bus.driver.quit()
-
-            # results = bus.driver.find_element_by_css_selector('.search-results__cluster-title')
-            # print('results:',results)
-            # 
-            # except NoSuchElementException:
-            #     print('result NoSuchElementException')
-            #     continue
-            links = results.find_elements_by_xpath(link_title)
-
-            # get all the links before going through each page
-            links = [link.get_attribute('href') for link in links]
-            for link in links:
-                # XXX: This whole section should be separated from this method
-                # XXX: move try-except to context managers
-                bus.driver.get(link)
-
-                overview = None
-                overview_xpath = '//div[@class="profile-overview-content"]'
                 try:
-                    overview = bus.driver.find_element_by_xpath(overview_xpath)
-                except NoSuchElementException:
-                    click.echo("No overview section skipping this user")
-                    continue
-
-                # every xpath below here are relative
-                fullname = None
-                fullname_xpath = './/span[@class="full-name"]'
-                try:
-                    fullname = overview.find_element_by_xpath(fullname_xpath)
-                except NoSuchElementException:
-                    # we store empty fullname : notsure for this
-                    fullname = ''
-                else:
-                    fullname = fullname.text.strip()
-
-                locality = None
-                try:
-                    locality = overview.find_element_by_class_name('locality')
-                except NoSuchElementException:
-                    locality = ''
-                else:
-                    locality = locality.text.strip()
-
-                industry = None
-                try:
-                    industry = overview.find_element_by_class_name('industry')
-                except NoSuchElementException:
-                    industry = ''
-                else:
-                    industry = industry.text.strip()
-
-                current_summary = None
-                csummary_xpath = './/tr[@id="overview-summary-current"]/td'
-                try:
-                    current_summary = overview.find_element_by_xpath(csummary_xpath)
-                except NoSuchElementException:
-                    current_summary = ''
-                else:
-                    current_summary = current_summary.text.strip()
-
-                past_summary = None
-                psummary_xpath = './/tr[@id="overview-summary-past"]/td'
-                try:
-                    past_summary = overview.find_element_by_xpath(psummary_xpath)
-                except NoSuchElementException:
-                    past_summary = ''
-                else:
-                    past_summary = past_summary.text.strip()
-
-                education = None
-                education_xpath = './/tr[@id="overview-summary-education"]/td'
-                try:
-                    education = overview.find_element_by_xpath(education_xpath)
+                    links = bus.driver.find_elements_by_xpath("//a[contains(@class, 'search-result__result-link')]")
                 except NoSuchElementException:
                     education = ''
                 else:
