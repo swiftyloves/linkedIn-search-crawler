@@ -143,8 +143,7 @@ def crawl(browser, username, infile, outfile):
     # first check and read the input file
     all_names = collect_names(infile)
 
-    fieldnames = ['fullname', 'locality', 'industry', 'current summary',
-                  'past summary', 'education', ]
+    fieldnames = ['occupation','courses_list']
     # then check we can write the output file
     # we don't want to complete process and show error about not
     # able to write outputs
@@ -187,7 +186,7 @@ def crawl(browser, username, infile, outfile):
                 )
             finally:
                 try:
-                    links = bus.driver.find_elements_by_xpath("//a[contains(@class, 'search-result__result-link')]")
+                    links = bus.driver.find_elements_by_css_selector(".search-result__info .search-result__result-link")
                 except NoSuchElementException:
                     print('links failed', NoSuchElementException)
 
@@ -235,28 +234,32 @@ def crawl(browser, username, infile, outfile):
                                 continue
                             
                             print('Courses')
-                            accomplishment.find_element_by_class_name('.svg-icon-wrap').click()
-                            print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
-                            while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
-                                accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
-                            
-                            courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
-                            courses_list = []
-                            # collect all course names
-                            for course in courses:
-                                courses_list.append(course.text)
+                            try:
+                                accomplishment.find_element_by_class_name('.svg-icon-wrap').click()
+                                print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
+                                while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
+                                    accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
+                                courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
 
-
-                            data = {
-                                'occupation': bus.driver.find_element_by_class_name('pv-top-card-section__headline').text,
-                                'courses_list': courses_list,
+                            except NoSuchElementException:
+                                print('no svg-icon-wrap')
+                                courses = accomplishment.find_elements_by_css_selector('.pv-accomplishments-block__summary-list li')
                                 
-                            }
-                            print(data)
-                            profiles.append(data)
 
-                    
-                            writer.writerows(profiles)
+                            if courses:
+                                courses_list = []
+                                # collect all course names
+                                for course in courses:
+                                    courses_list.append(course.text)
+                                data = {
+                                    'occupation': bus.driver.find_element_by_class_name('pv-top-card-section__headline').text,
+                                    'courses_list': courses_list,
+                                }
+                                print(data)
+                                profiles.append(data)
+                                writer.writerows(profiles)
+                            else:
+                                print('no class!')
 
                     click.echo("Obtained ..." + name)
 
