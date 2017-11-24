@@ -189,25 +189,76 @@ def crawl(browser, username, infile, outfile):
                 try:
                     links = bus.driver.find_elements_by_xpath("//a[contains(@class, 'search-result__result-link')]")
                 except NoSuchElementException:
-                    education = ''
-                else:
-                    education = education.text.strip()
+                    print('links failed', NoSuchElementException)
 
-                data = {
-                    'fullname': fullname,
-                    'locality': locality,
-                    'industry': industry,
-                    'current summary': current_summary,
-                    'past summary': past_summary,
-                    'education': education,
-                }
-                profiles.append(data)
+                links = [link.get_attribute('href') for link in links]
+                with open(outfile, 'a+') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                    for link in links:
+                        # every search result
+                        print('link:',link)
+                        bus.driver.get(link)
 
-            with open(outfile, 'a+') as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerows(profiles)
+                        accomplishments = None
 
-            click.echo("Obtained ..." + name)
+                        # scorll down to get accomplishment
+                        SCROLL_PAUSE_TIME = 0.5
+                        # Get scroll height
+                        last_height = bus.driver.execute_script("return document.body.scrollHeight")
+
+                        while True:
+                            # Scroll down to bottom
+                            bus.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+                            # Wait to load page
+                            time.sleep(SCROLL_PAUSE_TIME)
+
+                            # Calculate new scroll height and compare with last scroll height
+                            new_height = bus.driver.execute_script("return document.body.scrollHeight")
+                            if new_height == last_height:
+                                break
+                            last_height = new_height
+
+                        try:
+                            # results = WebDriverWait(bus.driver, 10).until(
+                            #     EC.presence_of_element_located((By.CSS_SELECTOR, ".pv-accomplishments-block__content"))
+                            # )
+                            accomplishments = bus.driver.find_elements_by_class_name('pv-accomplishments-block__content')
+                        except NoSuchElementException:
+                            click.echo("No accomplishments section skipping this user")
+                            continue
+                        print('accomplishments:',accomplishments)
+                        for accomplishment in accomplishments:
+                            title = accomplishment.find_element_by_class_name('pv-accomplishments-block__title');
+                            print('text:',title.text)
+                            if  title.text != 'Courses':
+                                continue
+                            
+                            print('Courses')
+                            accomplishment.find_element_by_class_name('.svg-icon-wrap').click()
+                            print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
+                            while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
+                                accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
+                            
+                            courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
+                            courses_list = []
+                            # collect all course names
+                            for course in courses:
+                                courses_list.append(course.text)
+
+
+                            data = {
+                                'occupation': bus.driver.find_element_by_class_name('pv-top-card-section__headline').text,
+                                'courses_list': courses_list,
+                                
+                            }
+                            print(data)
+                            profiles.append(data)
+
+                    
+                            writer.writerows(profiles)
+
+                    click.echo("Obtained ..." + name)
 
 
 @click.command()
