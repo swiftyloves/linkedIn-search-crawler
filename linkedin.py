@@ -23,6 +23,9 @@ import keyring
 from selenium import webdriver
 from selenium.common.exceptions import (WebDriverException,
                                         NoSuchElementException)
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 LINKEDIN_URL = 'https://www.linkedin.com'
@@ -161,24 +164,35 @@ def crawl(browser, username, infile, outfile):
         for name in all_names:
             click.echo("Getting ...")
             try:
-                search_input = bus.driver.find_element_by_id('main-search-box')
+                search_input = bus.driver.find_element_by_css_selector('.ember-view input')
             except NoSuchElementException:
                 continue
             search_input.send_keys(name)
+            try:
+                # search_form = bus.driver.find_element_by_class_name('nav-search')
+                # print('search_form:',search_form)
+                # search_form.submit()
+                bus.driver.find_element_by_css_selector('.search-typeahead-v2__button').click()
+            except NoSuchElementException:
+                print('click search button failes')
 
-            search_form = bus.driver.find_element_by_id('global-search')
-            search_form.submit()
-#            search_button = bus.driver.find_element_by_xpath(search_btn)
-#            search_button.click()
-
-            profiles = []
+            # profiles = []
 
             # collect all the profile links
             results = None
             try:
-                results = bus.driver.find_element_by_id('results-container')
-            except NoSuchElementException:
-                continue
+                results = WebDriverWait(bus.driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, ".search-results__cluster-title"))
+                )
+            finally:
+                bus.driver.quit()
+
+            # results = bus.driver.find_element_by_css_selector('.search-results__cluster-title')
+            # print('results:',results)
+            # 
+            # except NoSuchElementException:
+            #     print('result NoSuchElementException')
+            #     continue
             links = results.find_elements_by_xpath(link_title)
 
             # get all the links before going through each page
