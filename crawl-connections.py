@@ -104,6 +104,24 @@ def login_into_linkedin(driver, username):
         submit_form.submit()
         click.echo("Logging in")
 
+def login_in_the_middle(driver, username):
+
+    userfield = driver.find_element_by_css_selector('.form-email input')
+    passfield = driver.find_element_by_class_name('password')
+
+    submit_form = driver.find_element_by_id('login')
+
+    password = get_password(username)
+
+    # If we have login page we get these fields
+    # I know it's a hack but it works
+    if userfield and passfield:
+        userfield.send_keys(username)
+        passfield.send_keys(password)
+        submit_form.submit()
+        click.echo("Logging in")
+
+
 
 def collect_names(filepath):
     """
@@ -187,9 +205,16 @@ def crawl(browser, username, infile, outfile):
         print('\n')
         links = bus.driver.find_elements_by_css_selector('li .mn-person-info__details a')
         links = [link.get_attribute('href') for link in links]
+        REDIRECT_PAUSE_TIME = 2
         with open(outfile, 'a+') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             for link in links:
+                time.sleep(REDIRECT_PAUSE_TIME)
+                # try:
+                #     login_in_the_middle(driver, username)
+                #     print('login_in_the_middle(driver, username)')
+                # except NoSuchElementException:
+                #     pass
                 sys.stdout.write('*')
                 profiles = []
                 # every search result
