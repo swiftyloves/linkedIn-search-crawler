@@ -111,7 +111,8 @@ def collect_names(filepath):
     """
     names = []
     with open(filepath, 'r') as _file:
-        names = [line.strip() for line in _file.readlines()]
+        # names = [line.strip() for line in _file.readlines()]
+        names = [line.split()[0] for line in _file.readlines()]
     return names
 
 
