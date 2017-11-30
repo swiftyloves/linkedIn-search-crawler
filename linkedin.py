@@ -104,6 +104,23 @@ def login_into_linkedin(driver, username):
         submit_form.submit()
         click.echo("Logging in")
 
+def login_in_the_middle(driver, username):
+
+    userfield = driver.find_element_by_css_selector('.form-email input')
+    passfield = driver.find_element_by_class_name('password')
+
+    submit_form = driver.find_element_by_id('login')
+
+    password = get_password(username)
+
+    # If we have login page we get these fields
+    # I know it's a hack but it works
+    if userfield and passfield:
+        userfield.send_keys(username)
+        passfield.send_keys(password)
+        submit_form.submit()
+        click.echo("Logging in")
+
 
 def collect_names(filepath):
     """
@@ -112,7 +129,7 @@ def collect_names(filepath):
     names = []
     with open(filepath, 'r') as _file:
         # names = [line.strip() for line in _file.readlines()]
-        names = [line.split()[0] for line in _file.readlines()]
+        names = [line.split() for line in _file.readlines()]
     return names
 
 
@@ -167,6 +184,7 @@ def crawl(browser, username, infile, outfile):
             try:
                 search_input = bus.driver.find_element_by_css_selector('.ember-view input')
             except NoSuchElementException:
+                print('NoSuchElementException search_input')
                 continue
             search_input.send_keys(name)
             try:
@@ -190,7 +208,6 @@ def crawl(browser, username, infile, outfile):
                     links = bus.driver.find_elements_by_css_selector(".search-result__info .search-result__result-link")
                 except NoSuchElementException:
                     print('links failed', NoSuchElementException)
-
                 links = [link.get_attribute('href') for link in links]
                 with open(outfile, 'a+') as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -198,6 +215,13 @@ def crawl(browser, username, infile, outfile):
                         # every search result
                         print('link:',link)
                         bus.driver.get(link)
+                        # Might need to login in the middle
+                        # try:
+                        #     login_into_linkedin(bus.driver, username)
+                        #     print('login again')
+                        #     bus.driver.get(link)
+                        # except:
+                        #     pass
 
                         accomplishments = None
 
