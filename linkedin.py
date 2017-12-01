@@ -28,6 +28,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import re
+import random
 
 LINKEDIN_URL = 'https://www.linkedin.com'
 MAX_PAGE_NUMBER = 15
@@ -206,9 +207,9 @@ def crawl(browser, username, infile, outfile):
                 )
             finally:
                 # run through pages
-                print(driver.current_url)
+                print(bus.driver.current_url)
                 for i in range(1, MAX_PAGE_NUMBER):
-                    url = driver.current_url
+                    url = bus.driver.current_url
                     page_url = re.sub(r"&page=\d+", "&page=" + str(i), url)
                     bus.driver.get(page_url)
 
