@@ -272,7 +272,8 @@ def crawl(browser, username, infile, outfile):
                                 
                                 print('Courses')
                                 try:
-                                    accomplishment.find_element_by_class_name('pv-accomplishments-block__expand').click()
+                                    # TODO fixed later to expand... (being banned)
+                                    accomplishment.find_element_by_css_selector('.pv-accomplishments-block__expand').click()
                                     print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
                                     while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
                                         accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
