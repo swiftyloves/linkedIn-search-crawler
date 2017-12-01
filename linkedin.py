@@ -31,6 +31,7 @@ import re
 import random
 
 LINKEDIN_URL = 'https://www.linkedin.com'
+INITIAL_PAGE_NUMBER = 1
 MAX_PAGE_NUMBER = 15
 
 class UnknownUserException(Exception):
@@ -208,8 +209,9 @@ def crawl(browser, username, infile, outfile):
             finally:
                 # run through pages
                 print(bus.driver.current_url)
-                for i in range(1, MAX_PAGE_NUMBER):
-                    url = bus.driver.current_url
+
+                url = bus.driver.current_url + "&page=1"
+                for i in range(INITIAL_PAGE_NUMBER, MAX_PAGE_NUMBER):
                     page_url = re.sub(r"&page=\d+", "&page=" + str(i), url)
                     bus.driver.get(page_url)
 
@@ -219,6 +221,7 @@ def crawl(browser, username, infile, outfile):
                     except NoSuchElementException:
                         print('links failed', NoSuchElementException)
                     links = [link.get_attribute('href') for link in links]
+                    # print('links:',links)
                     with open(outfile, 'a+') as csvfile:
                         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                         for link in links:
