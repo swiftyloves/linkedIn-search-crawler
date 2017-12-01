@@ -27,9 +27,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import re
 
 LINKEDIN_URL = 'https://www.linkedin.com'
-
+MAX_PAGE_NUMBER = 15
 
 class UnknownUserException(Exception):
     pass
@@ -204,89 +205,96 @@ def crawl(browser, username, infile, outfile):
                     EC.presence_of_element_located((By.CSS_SELECTOR, ".search-results__primary-cluster"))
                 )
             finally:
-                try:
-                    links = bus.driver.find_elements_by_css_selector(".search-result__info .search-result__result-link")
-                except NoSuchElementException:
-                    print('links failed', NoSuchElementException)
-                links = [link.get_attribute('href') for link in links]
-                with open(outfile, 'a+') as csvfile:
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    for link in links:
-                        # every search result
-                        print('link:',link)
-                        bus.driver.get(link)
-                        # Might need to login in the middle
-                        # try:
-                        #     login_into_linkedin(bus.driver, username)
-                        #     print('login again')
-                        #     bus.driver.get(link)
-                        # except:
-                        #     pass
+                # run through pages
+                print(driver.current_url)
+                for i in range(1, MAX_PAGE_NUMBER):
+                    url = driver.current_url
+                    page_url = re.sub(r"&page=\d+", "&page=" + str(i), url)
+                    bus.driver.get(page_url)
 
-                        accomplishments = None
+                
+                    try:
+                        links = bus.driver.find_elements_by_css_selector(".search-result__info .search-result__result-link")
+                    except NoSuchElementException:
+                        print('links failed', NoSuchElementException)
+                    links = [link.get_attribute('href') for link in links]
+                    with open(outfile, 'a+') as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                        for link in links:
+                            # every search result
+                            print('link:',link)
+                            bus.driver.get(link)
+                            # Might need to login in the middle
+                            # try:
+                            #     login_into_linkedin(bus.driver, username)
+                            #     print('login again')
+                            #     bus.driver.get(link)
+                            # except:
+                            #     pass
 
-                        # scorll down to get accomplishment
-                        # Get scroll height
-                        last_height = bus.driver.execute_script("return document.body.scrollHeight")
+                            accomplishments = None
 
-                        while True:
-                            # Scroll down to bottom
-                            bus.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                            # scorll down to get accomplishment
+                            # Get scroll height
+                            last_height = bus.driver.execute_script("return document.body.scrollHeight")
 
-                            # Wait to load page
-                            time.sleep(random.uniform(0.2, 7))
+                            while True:
+                                # Scroll down to bottom
+                                bus.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-                            # Calculate new scroll height and compare with last scroll height
-                            new_height = bus.driver.execute_script("return document.body.scrollHeight")
-                            if new_height == last_height:
-                                break
-                            last_height = new_height
+                                # Wait to load page
+                                time.sleep(random.uniform(0.2, 7))
 
-                        try:
-                            # results = WebDriverWait(bus.driver, 10).until(
-                            #     EC.presence_of_element_located((By.CSS_SELECTOR, ".pv-accomplishments-block__content"))
-                            # )
-                            accomplishments = bus.driver.find_elements_by_class_name('pv-accomplishments-block__content')
-                        except NoSuchElementException:
-                            click.echo("No accomplishments section skipping this user")
-                            continue
-                        print('accomplishments:',accomplishments)
-                        for accomplishment in accomplishments:
-                            title = accomplishment.find_element_by_class_name('pv-accomplishments-block__title');
-                            print('text:',title.text)
-                            if  title.text != 'Courses':
-                                continue
-                            
-                            print('Courses')
+                                # Calculate new scroll height and compare with last scroll height
+                                new_height = bus.driver.execute_script("return document.body.scrollHeight")
+                                if new_height == last_height:
+                                    break
+                                last_height = new_height
+
                             try:
-                                accomplishment.find_element_by_class_name('.svg-icon-wrap').click()
-                                print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
-                                while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
-                                    accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
-                                courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
-
+                                # results = WebDriverWait(bus.driver, 10).until(
+                                #     EC.presence_of_element_located((By.CSS_SELECTOR, ".pv-accomplishments-block__content"))
+                                # )
+                                accomplishments = bus.driver.find_elements_by_class_name('pv-accomplishments-block__content')
                             except NoSuchElementException:
-                                print('no svg-icon-wrap')
-                                courses = accomplishment.find_elements_by_css_selector('.pv-accomplishments-block__summary-list li')
+                                click.echo("No accomplishments section skipping this user")
+                                continue
+                            print('accomplishments:',accomplishments)
+                            for accomplishment in accomplishments:
+                                title = accomplishment.find_element_by_class_name('pv-accomplishments-block__title');
+                                print('text:',title.text)
+                                if  title.text != 'Courses':
+                                    continue
                                 
+                                print('Courses')
+                                try:
+                                    accomplishment.find_element_by_class_name('.svg-icon-wrap').click()
+                                    print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
+                                    while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
+                                        accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
+                                    courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
 
-                            if courses:
-                                courses_list = []
-                                # collect all course names
-                                for course in courses:
-                                    courses_list.append(course.text)
-                                data = {
-                                    'occupation': bus.driver.find_element_by_class_name('pv-top-card-section__headline').text,
-                                    'courses_list': courses_list,
-                                }
-                                print(data)
-                                profiles.append(data)
-                                writer.writerows(profiles)
-                            else:
-                                print('no class!')
+                                except NoSuchElementException:
+                                    print('no svg-icon-wrap')
+                                    courses = accomplishment.find_elements_by_css_selector('.pv-accomplishments-block__summary-list li')
+                                    
 
-                    click.echo("Obtained ..." + name)
+                                if courses:
+                                    courses_list = []
+                                    # collect all course names
+                                    for course in courses:
+                                        courses_list.append(course.text)
+                                    data = {
+                                        'occupation': bus.driver.find_element_by_class_name('pv-top-card-section__headline').text,
+                                        'courses_list': courses_list,
+                                    }
+                                    print(data)
+                                    profiles.append(data)
+                                    writer.writerows(profiles)
+                                else:
+                                    print('no class!')
 
+                        click.echo("Obtained ..." + name)
 
 @click.command()
 @click.argument('username')
