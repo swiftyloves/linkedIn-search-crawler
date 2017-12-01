@@ -130,7 +130,7 @@ def collect_names(filepath):
     names = []
     with open(filepath, 'r') as _file:
         # names = [line.strip() for line in _file.readlines()]
-        names = [line.split() for line in _file.readlines()]
+        names = [line[:-1] + ' in people' for line in _file.readlines()]
     return names
 
 
