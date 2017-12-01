@@ -226,7 +226,6 @@ def crawl(browser, username, infile, outfile):
                         accomplishments = None
 
                         # scorll down to get accomplishment
-                        SCROLL_PAUSE_TIME = 0.5
                         # Get scroll height
                         last_height = bus.driver.execute_script("return document.body.scrollHeight")
 
@@ -235,7 +234,7 @@ def crawl(browser, username, infile, outfile):
                             bus.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
                             # Wait to load page
-                            time.sleep(SCROLL_PAUSE_TIME)
+                            time.sleep(random.uniform(0.2, 7))
 
                             # Calculate new scroll height and compare with last scroll height
                             new_height = bus.driver.execute_script("return document.body.scrollHeight")
