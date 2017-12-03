@@ -224,7 +224,14 @@ def crawl(browser, username, infile, outfile):
                     # print('links:',links)
                     with open(outfile, 'a+') as csvfile:
                         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                        i = 0
+                        skip = [0,1,2,5,9]
                         for link in links:
+                            if i in skip:
+                                time.sleep(random.uniform(0.2, 7))
+                                i += 1
+                            else:
+                                i += 1
                             # every search result
                             print('link:',link)
                             bus.driver.get(link)
@@ -270,18 +277,26 @@ def crawl(browser, username, infile, outfile):
                                 if  title.text != 'Courses':
                                     continue
                                 
-                                print('Courses')
+                                print('==== Courses ====')
+                                """ Temp commented out for crawling data sucessfully
                                 try:
                                     # TODO fixed later to expand... (being banned)
-                                    accomplishment.find_element_by_css_selector('.pv-accomplishments-block__expand').click()
+                                    element = accomplishment.find_element_by_css_selector('.pv-accomplishments-block__expand').send_keys('\n')
+                                    bus.driver.execute_script("arguments.click();", element)
                                     print(accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline'))
                                     while (accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')):
-                                        accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline').click();
+                                        time.sleep(random.uniform(0.2, 7))
+                                        element = accomplishment.find_element_by_class_name('pv-profile-section__see-more-inline')
+                                        bus.driver.execute_script("arguments[0].click();", element)
                                     courses = accomplishment.find_elements_by_class_name('pv-accomplishments-block__list li')
+                                    print('courses:', courses)
 
                                 except NoSuchElementException:
                                     print('no svg-icon-wrap')
                                     courses = accomplishment.find_elements_by_css_selector('.pv-accomplishments-block__summary-list li')
+                                    print('courses:', courses)
+                                """
+                                courses = accomplishment.find_elements_by_css_selector('.pv-accomplishments-block__summary-list li')
                                     
 
                                 if courses:
@@ -298,6 +313,7 @@ def crawl(browser, username, infile, outfile):
                                     writer.writerows(profiles)
                                 else:
                                     print('no class!')
+                            time.sleep(random.uniform(0.2, 7))
 
                         click.echo("Obtained ..." + name)
 
